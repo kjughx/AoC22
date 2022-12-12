@@ -1,6 +1,6 @@
 #!/bin/sh
 
-day=$(ls -d src/day* | sort | tail -n1 | sed 's/src\/day\(\w\+\)/\1/')
+day=$(ls -d src/day* | sed 's/src\/day\(\w\+\)/\1/' | sort -n | tail -n1 )
 day=$((day + 1))
 if [ ! -d "src/day$day" ]; then
     mkdir -p src/day$day
