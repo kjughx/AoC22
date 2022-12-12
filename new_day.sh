@@ -3,9 +3,8 @@
 day=$(ls -d src/day* | sed 's/src\/day\(\w\+\)/\1/' | sort -n | tail -n1 )
 day=$((day + 1))
 if [ ! -d "src/day$day" ]; then
-    mkdir -p src/day$day
-    cp template.py src/day$day/main.py
-    sed -i "s/dayx/day$day/" src/day$day/main.py
+    cp template.py src/day$day.py
+    sed -i "s/dayx/day$day/" src/day$day.py
     touch inputs/day$day
 fi
 
