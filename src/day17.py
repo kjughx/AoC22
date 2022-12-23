@@ -1,7 +1,6 @@
 #!/bin/env python3 
 from itertools import cycle
 from collections import deque
-import numpy as np
 
 def draw(rocks):
     h = max([y for _, y in rocks])

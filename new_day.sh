@@ -1,6 +1,6 @@
 #!/bin/sh
 
-day=$(ls -d src/day* | sed 's/src\/day\(\w\+\).py/\1/' | sort -n | tail -n1 )
+day=$(ls src/day* | sed 's/src\/day\(\w\+\).py/\1/' | sort -n | tail -n1 )
 day=$((day + 1))
 if [ ! -d "src/day$day" ]; then
     cp template.py src/day$day.py
