@@ -1,9 +1,6 @@
 #!/bin/env python3 
 
-def distance(bnode, enode, vertices):
-    spt = {}
-
-with open('inputs/test') as file:
+with open('inputs/day16') as file:
     tunnels = {}
     valves = {'AA': 0}
     for line in file.readlines():
@@ -15,35 +12,30 @@ with open('inputs/test') as file:
             valves[valve] = rate
         tunnels[valve] = targets
 
-    root = 'AA'
-    """
-    start at 'AA' and visit it's neighbors.
-    """
-
-    bits = {key: i for i,key in enumerate(sorted(valves))}
-
-    # # If you come in to this function with the same opened set and same valve as a previous iteration, we already know the best path and what point it gives
     vis = {}
-    def f(valve, time, opened):
+    def f(valve, time, opened, elephant):
         if time == 0:
-            return 0
-       
-        try:
-            return vis[key]
-        except:
-            pass
+            if elephant:
+                return f('AA', 26, opened, False)
+            else:
+                return 0
+        
+        if (valve, time, opened, elephant) in vis:
+            return vis[(valve, time, opened, elephant)]
 
         ans = 0
-        if not (bit & opened):
-            opened |= bit
-            ans = max(ans, valves[valve]*(time-1) + f(valve, time - 1, opened)) # open the valve
+        if valve in valves: 
+            bit = 1 << list(valves).index(valve)
+            if not (bit & opened):
+                ans = max(ans, valves[valve]*(time-1) + f(valve, time - 1, opened | bit, elephant)) # open the valve
 
-        for neighbor in tunnels[valve]:
-            ans = max(ans, f(neighbor, time-1, opened)) # go to neighbor
+        for target in tunnels[valve]:
+            ans = max(ans, f(target, time - 1, opened, elephant)) # go to neighbor
 
-        vis[key] = ans 
+        vis[(valve, time, opened, elephant)] = ans 
 
         return ans
 
-
-    print(f('AA', 30, 0))
+    maxtime = 30
+    # print(f('AA', maxtime, 0, False))
+    print(f('AA', 26, 0, True))
