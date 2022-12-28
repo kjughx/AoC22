@@ -1,46 +1,63 @@
 #!/bin/env python3
 
-with open('../inputs/day19') as file:
-    for line in file.readlines():
-        line = line.strip('\n')
+def wait(bots, resources):
+    for i in range(len(bots)):
+        resources[i] += bots[i]
+    return bots, resources
 
-def canBuy(material, rbts):
-    for num, mat in rbts[material][0]:
-        if rbts[mat][2] < int(num):
+
+def canBuy(material, costs, resources):
+    for i, cost in enumerate(costs[material]):
+        if resources[i] < cost:
             return False
     return True
 
-from collections import deque
+def buy(material, costs, bots, resources):
+    for i, cost in enumerate(costs[material]):
+        resources[i] -= cost
+    bots[material] += 1
+    return bots, resources
+
 import re
 
 with open('inputs/day19') as file:
     blueprints = [line.strip('\n') for line in file.readlines()]
     quality = 0
-    # for each minute, try buying or waiting and flood fill the queue 
+
     materials = ['ore', 'clay', 'obsidian', 'geode']
     for blueprint in blueprints:
-        costs = [re.findall('\d \w+', line) for line in blueprint.split('.')]
-        orer = [cost.split(' ') for cost in costs[0]]
-        clayr = [cost.split(' ') for cost in costs[1]]
-        obsr = [cost.split(' ') for cost in costs[2]]
-        geor = [cost.split(' ') for cost in costs[3]]
-        robots = {"ore": [orer, 0,0], "clay": [clayr, 0,0], "obsidian": [obsr, 0,0], "geode": [geor, 0,0]}
+        costs = [re.findall("\d+ \w+", line) for line in blueprint.split('. ')]
+        bp = []
+        for cost in costs:
+            c = [int(m.split(' ')[0]) for m in cost]
+            bp.append(c)
 
-        q = deque([[robots, "ore", 'w']])
-        while q:
-            rbts, material, action = q.popleft()
-            match action:
-                case 'w':
-                    rbts[material][2] += 1
-                case 'b':
-                    rbts[material][1] += 1
-                    for num, mat in rbts[material][0]:
-                        rbts[mat][2] -= int(num)
-            for material in materials:
-                if canBuy(material, rbts):
-                    q.append([rbts.copy(), material, 'b'])
-                else:
-                    q.append([rbts.copy(), material, 'w'])
-            print(q)
-            break
->>>>>>> 3888ccc (No need to upload the inputs)
+        costs = bp
+        print(costs)
+
+        vis = {}
+        def f(time, bots, resources):
+            if time == 0:
+                return 0
+
+            key = (time, *bots, *resources)
+            if key in vis:
+                return vis[key]
+
+            ans = 0
+
+            bots_, resources_ = wait(bots, resources)
+            print(time, 'w', bots_, resources_)
+            ans = max(ans, f(time-1, bots_, resources_))
+
+            for i in range(len(materials)):
+                if canBuy(i, costs, resources):
+                    bots_, resources_ = buy(i, costs, bots, resources)
+                    print(time, 'b', bots_, resources_)
+                    ans = max(ans, f(time-1, bots_, resources_))
+
+            ans = resources[3]
+            vis[key] = ans
+            return ans
+
+        # print(f(10, [1, 0, 0, 0], [0,0,0,0]))
