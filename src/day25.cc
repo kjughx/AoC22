@@ -5,26 +5,12 @@
 
 #define BASE 5
 
-std::string add(std::string lh, std::string rh) {
-    std::string ans;
-    if (rh.size() > lh.size()){
-        ans.assign(lh);
-        lh.assign(rh);
-        rh.assign(ans);
-    }
-    ans.assign("");
-
-    /* *
-     * How to add two numbers?
-     * */
-
-    return 0;
-}
-
 int main(void) {
-    std::ifstream infile("../inputs/day25");
+    std::ifstream infile("inputs/day25");
     std::string line;
     std::string name;
+
+    const char* to_snafu = "=-012";
 
     long int number = 0;
     char c;
@@ -57,4 +43,16 @@ int main(void) {
     while (std::pow(BASE, maxbase) < number) { maxbase++; }
 
     std::cout << maxbase << std::endl;
+
+    std::string output = "";
+    int div;
+    while (number) {
+        div = ((number+2) % 5);
+        output = to_snafu[div] + output;
+        std::cout << div << std::endl;
+        number = (number+2)/5;
+    }
+    std::cout << output << std::endl;
 }
+
+/* Part 1 = 20-==01-2-=1-2---1-0 */

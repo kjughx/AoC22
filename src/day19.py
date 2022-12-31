@@ -1,63 +1,63 @@
 #!/bin/env python3
 
-def wait(bots, resources):
-    for i in range(len(bots)):
-        resources[i] += bots[i]
-    return bots, resources
-
-
-def canBuy(material, costs, resources):
-    for i, cost in enumerate(costs[material]):
-        if resources[i] < cost:
-            return False
-    return True
-
-def buy(material, costs, bots, resources):
-    for i, cost in enumerate(costs[material]):
-        resources[i] -= cost
-    bots[material] += 1
-    return bots, resources
-
 import re
+from collections import deque
 
 with open('inputs/day19') as file:
     blueprints = [line.strip('\n') for line in file.readlines()]
     quality = 0
 
     materials = ['ore', 'clay', 'obsidian', 'geode']
-    for blueprint in blueprints:
-        costs = [re.findall("\d+ \w+", line) for line in blueprint.split('. ')]
+    for bpi, blueprint in enumerate(blueprints):
+        costs = [re.findall(r"\d+ \w+", line) for line in blueprint.split('. ')]
         bp = []
+        maxcost = [0,0,0]
         for cost in costs:
-            c = [int(m.split(' ')[0]) for m in cost]
+            c = [0,0,0,0]
+            for m in cost:
+                ci, m = m.split(' ')
+                c[materials.index(m)] = int(ci)
+                maxcost[materials.index(m)] = max(int(ci), maxcost[materials.index(m)])
             bp.append(c)
 
         costs = bp
-        print(costs)
+        print(maxcost)
 
-        vis = {}
-        def f(time, bots, resources):
+        vis = set()
+        maxtime = 24
+        q = deque([(maxtime, [1, 0, 0, 0], [0, 0, 0, 0])])
+        maxg = 0
+
+        while q:
+            time, bots, resources = q.popleft()
+            assert(all(x >= 0 for x in bots))
+            assert(all(x >= 0 for x in resources))
+
+            maxg = max(maxg, resources[3])
+
             if time == 0:
-                return 0
+                continue
 
             key = (time, *bots, *resources)
             if key in vis:
-                return vis[key]
+                continue
+            vis.add(key)
 
-            ans = 0
+            resources_ = resources[:]
+            for i in range(4):
+                resources_[i] += bots[i]
+            q.append([time - 1, bots, resources_])
 
-            bots_, resources_ = wait(bots, resources)
-            print(time, 'w', bots_, resources_)
-            ans = max(ans, f(time-1, bots_, resources_))
+            for i in range(4):
+                if i != 3 and resources[i] > maxcost[i]:
+                    continue
+                bots_, resources_ = bots[:], resources[:]
+                if all(resources[j] >= cost for j, cost in enumerate(costs[i])):
+                    for j, cost in enumerate(costs[i]):
+                        resources_[j] += (bots_[j] - cost)
 
-            for i in range(len(materials)):
-                if canBuy(i, costs, resources):
-                    bots_, resources_ = buy(i, costs, bots, resources)
-                    print(time, 'b', bots_, resources_)
-                    ans = max(ans, f(time-1, bots_, resources_))
-
-            ans = resources[3]
-            vis[key] = ans
-            return ans
-
-        # print(f(10, [1, 0, 0, 0], [0,0,0,0]))
+                    bots_[i] += 1
+                    q.append([time - 1, bots_, resources_])
+        print(maxg)
+        quality += (bpi+1) * maxg
+    print(quality)
