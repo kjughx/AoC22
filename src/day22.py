@@ -2,35 +2,6 @@
 
 import numpy as np
 
-def walk(steps, vec, start, cur, end):
-    s = cur
-    vec[s] = 'v'
-    l = end - start
-    for _ in range(steps):
-        ns = (s + 1) % l
-        if vec[ns] != '#' and vec[ns] != ' ':
-            vec[ns] = 'v'
-            s = ns
-
-    # vec[s] = 'v'
-    # for _ in range(steps):
-    #     if vec[(s+1)%len(vec)] != '#' and vec[(s+1)%len(vec)] != ' ':
-    #         vec[s] = 'v'
-    #         s = ((s + 1) % len(vec))
-    # vec[s] = 'x'
-    # return s, vec
-
-def rotate(dir, cur):
-    match dir,cur:
-        case ['R', 'R']: return 'D'
-        case ['R', 'L']: return 'U'
-        case ['D', 'R']: return 'L'
-        case ['D', 'L']: return 'R'
-        case ['L', 'R']: return 'U'
-        case ['L', 'L']: return 'D'
-        case ['U', 'R']: return 'R'
-        case ['U', 'L']: return 'L'
-
 with open('inputs/day22') as file:
     lines = [line.strip('\n') for line in file.readlines()]
     ipath = iter(lines[-1])
@@ -41,7 +12,7 @@ with open('inputs/day22') as file:
     try:
         while True:
             if c == 'R' or c == 'L':
-                path.append(int(op))
+                path.append(op)
                 path.append(c)
                 c = next(ipath)
                 op = ''
@@ -52,67 +23,109 @@ with open('inputs/day22') as file:
     except:
         pass
 
-    grid = np.array(lines[:-2])
-    maxl = max([len(row) for row in grid])
-    for i, row in enumerate(grid):
-        grid[i] += ' '*(maxl-len(row))
+    grid = lines[:-2]
 
-    grid = np.array([str(c) for line in grid for c in line]).reshape((len(lines[:-2]), maxl))
+    cr, cc = 0, grid[0].find('.')
+    dr, dc = 0,1
+    grid = [row + " " * (max([len(row) for row in grid]) - len(row)) for row in grid]
+    lr, lc = len(grid), len(grid[0])
 
-    # grid[:, 0]  : col 0
-    # grid[0, :]  : row 0
-    mc = len(grid[:, 0])
-    mr = len(grid[0])
-
-    rstart = {i: list(row).index('.') for i, row in enumerate(grid)}
-    rend = {i: mr - list(reversed(row)).index('.') + 1 for i, row in enumerate(grid)}
-    rsize = {i: (rend[i] - rstart[i]) for i,_ in enumerate(grid)}
-    cstart = {}
-    cend = {}
-    csize = {}
-    for c in range(mr):
-        cstart[c] = list(grid[:, c]).index('.')
-        cend[c] = mc - list(reversed(grid[:, c])).index('.')
-        csize[c] = cend[c] - cstart[c]
-    print(csize)
-    r0, c0 = (0, rstart[0])
-    grid[r0, c0] = 'x'
-
-    dir = 'R'
-    current = r0,c0
-
-    for i, p in enumerate(path):
-        if isinstance(p, int):
-            print(f"Move in {dir}, {int(p)} steps")
-            steps = int(p)
-            match dir:
-                case 'R':
-                    row, col = current
-                    s, grid[row, :] = walk(steps, grid[row, :])
-                    current = (row, col + s)
-                    print(current)
-                case 'L':
-                    row, col = current
-                    s, grid[row, :] = walk(steps, reversed(grid[:[row]]))
-                    current = (row, col - s)
-                    print(current)
-
-                case 'D':
-                    row, col = current
-                    s, grid[:, col] = walk(steps, grid[:, col])
-                    current = (row + s, col)
-                    print(current)
-
-                case 'U':
-                    row, col = current
-                    s, grid[:, row] = walk(steps, reversed(grid[:, row]))
-                    current = (row - s, col)
-                    print(current)
+    for op in path:
+        if op.isdigit():
+            steps = int(op)
+            for _ in range(steps):
+                # step in direction, if it's not a '.' then wrap and keep trying
+                nr, nc = cr, cc
+                while True:
+                    nr, nc = (nr + dr) % lr, (nc + dc) % lc
+                    if grid[nr][nc] != ' ':
+                        break
+                if grid[nr][nc] == '#':
+                    break
+                cr, cc = nr, nc
         else:
-            bdir = dir
-            dir = rotate(dir, p)
-            print(f"Rotate {p}: {bdir} -> {dir}")
-        
-        if i == 4:
-            break 
-    print(grid)
+            if op == 'R':
+                dr, dc = dc, -dr
+            else:
+                dr, dc = -dc, dr
+
+    cr, cc = cr+1, cc+1
+    match (dr, dc):
+        case [0, 1]: ans = 1000*cr + 4* cc + 0 
+        case [1, 0]: ans = 1000*cr + 4* cc + 1
+        case [0, -1]: ans = 1000*cr + 4* cc + 2 
+        case [-1, 0]: ans = 1000*cr + 4* cc + 3 
+
+    print("part1: ", ans)
+
+    cr, cc = 0, grid[0].find('.')
+    dr, dc = 0, 1
+
+    import re
+    for op in path:
+        if op.isdigit():
+            for _ in range(int(op)):
+                cdr = dr
+                cdc = dc
+                nr = cr + dr
+                nc = cc + dc
+                if nr < 0 and 50 <= nc < 100 and dr == -1:
+                    dr, dc = 0, 1
+                    nr, nc = nc + 100, 0
+                elif nc < 0 and 150 <= nr < 200 and dc == -1:
+                    dr, dc = 1, 0
+                    nr, nc = 0, nr - 100
+                elif nr < 0 and 100 <= nc < 150 and dr == -1:
+                    nr, nc = 199, nc - 100
+                elif nr >= 200 and 0 <= nc < 50 and dr == 1:
+                    nr, nc = 0, nc + 100
+                elif nc >= 150 and 0 <= nr < 50 and dc == 1:
+                    dc = -1
+                    nr, nc = 149 - nr, 99
+                elif nc == 100 and 100 <= nr < 150 and dc == 1:
+                    dc = -1
+                    nr, nc = 149 - nr, 149
+                elif nr == 50 and 100 <= nc < 150 and dr == 1:
+                    dr, dc = 0, -1
+                    nr, nc = nc - 50, 99
+                elif nc == 100 and 50 <= nr < 100 and dc == 1:
+                    dr, dc = -1, 0
+                    nr, nc = 49, nr + 50
+                elif nr == 150 and 50 <= nc < 100 and dr == 1:
+                    dr, dc = 0, -1
+                    nr, nc = nc + 100, 49
+                elif nc == 50 and 150 <= nr < 200 and dc == 1:
+                    dr, dc = -1, 0
+                    nr, nc = 149, nr - 100
+                elif nr == 99 and 0 <= nc < 50 and dr == -1:
+                    dr, dc = 0, 1
+                    nr, nc = nc + 50, 50
+                elif nc == 49 and 50 <= nr < 100 and dc == -1:
+                    dr, dc = 1, 0
+                    nr, nc = 100, nr - 50
+                elif nc == 49 and 0 <= nr < 50 and dc == -1:
+                    dc = 1
+                    nr, nc = 149 - nr, 0
+                elif nc < 0 and 100 <= nr < 150 and dc == -1:
+                    dc = 1
+                    nr, nc = 149 - nr, 50
+                if grid[nr][nc] == "#":
+                    dr = cdr
+                    dc = cdc
+                    break
+                cr = nr
+                cc = nc
+
+        elif op == "R":
+            dr, dc = dc, -dr
+        elif op == "L":
+            dr, dc = -dc, dr
+
+    cr, cc = cr+1, cc+1
+    match (dr, dc):
+        case [0, 1]: ans = 1000*cr + 4* cc + 0 
+        case [1, 0]: ans = 1000*cr + 4* cc + 1
+        case [0, -1]: ans = 1000*cr + 4* cc + 2 
+        case [-1, 0]: ans = 1000*cr + 4* cc + 3 
+
+    print("part2: ", ans)
